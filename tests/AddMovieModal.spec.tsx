@@ -2,6 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AddMovieModal } from "../src/components/AddMovieModal";
 import type { Watch } from "../src/interfaces/watch";
+import { RecordControls } from "../src/components/RecordControls";
+import { EditableSongList } from "../src/components/EditableSongList";
 
 /**
  * These are AI-generated test for the dialog.
@@ -324,5 +326,41 @@ describe("AddMovieModal Component", () => {
         // Buttons have role="button"
         const buttons = screen.getAllByRole("button");
         expect(buttons.length).toBeGreaterThan(0);
+    });
+});
+
+describe("Editable Songlist Component", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    const setSongs = jest.fn();
+
+    it("should add songs when clicked", () => {
+        const mockSongs: string[] = [];
+        render(<EditableSongList songs={mockSongs} setSongs={setSongs} />);
+        const addButton = screen.getByText("Add Song");
+        expect(addButton).toBeInTheDocument();
+        userEvent.click(addButton);
+        expect(setSongs).toHaveBeenCalledWith([""]);
+    });
+
+    it("should edit song when input changes", () => {
+        const songs = ["Song 1"];
+        render(<EditableSongList songs={songs} setSongs={setSongs} />);
+        const input = screen.getByDisplayValue("Song 1");
+        expect(input).toBeInTheDocument();
+        userEvent.clear(input);
+        userEvent.type(input, "New Song 2");
+        expect(setSongs).toHaveBeenCalledWith(["New Song 2"]);
+    });
+
+    it("should delete song when delete button is clicked", () => {
+        const songs = ["Song 1", "Song 2"];
+        render(<EditableSongList songs={songs} setSongs={setSongs} />);
+        const deleteButtons = screen.getAllByRole("button", { name: "❌" });
+        expect(deleteButtons.length).toBe(2);
+        userEvent.click(deleteButtons[0]);
+        expect(setSongs).toHaveBeenCalledWith(["Song 2"]);
     });
 });

@@ -28,4 +28,17 @@ describe("WatchStatus component", () => {
         const watchedText = screen.getByText(/Not yet watched/i);
         expect(watchedText).toBeInTheDocument();
     });
+    it("Renders the watch status", () => {
+        render(
+            <WatchStatus
+                watched={{
+                    seen: true,
+                    liked: true,
+                    when: null,
+                }}
+            ></WatchStatus>,
+        );
+        const watchedText = screen.getByText(/Watched/i);
+        expect(watchedText).toBeInTheDocument();
+    });
 });

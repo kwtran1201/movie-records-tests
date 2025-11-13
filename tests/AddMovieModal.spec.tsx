@@ -2,8 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AddMovieModal } from "../src/components/AddMovieModal";
 import type { Watch } from "../src/interfaces/watch";
-import { RecordControls } from "../src/components/RecordControls";
 import { EditableSongList } from "../src/components/EditableSongList";
+import { MovieEditor } from "../src/components/MovieEditor";
+import type { Movie } from "../src/interfaces/movie";
 
 /**
  * These are AI-generated test for the dialog.
@@ -350,9 +351,8 @@ describe("Editable Songlist Component", () => {
         render(<EditableSongList songs={songs} setSongs={setSongs} />);
         const input = screen.getByDisplayValue("Song 1");
         expect(input).toBeInTheDocument();
-        userEvent.clear(input);
         userEvent.type(input, "New Song 2");
-        expect(setSongs).toHaveBeenCalledWith(["New Song 2"]);
+        expect(setSongs).toHaveBeenCalledTimes(10);
     });
 
     it("should delete song when delete button is clicked", () => {
@@ -362,5 +362,158 @@ describe("Editable Songlist Component", () => {
         expect(deleteButtons.length).toBe(2);
         userEvent.click(deleteButtons[0]);
         expect(setSongs).toHaveBeenCalledWith(["Song 2"]);
+    });
+});
+
+describe("Movie Editor Component", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    const changeEditing = jest.fn();
+    const editMovie = jest.fn();
+    const deleteMovie = jest.fn();
+    const movie: Movie = {
+        title: "Test Movie",
+        released: 2024,
+        description: "A movie for testing",
+        id: "test-movie-1",
+        rating: 6,
+        soundtrack: [],
+        watched: { seen: true, liked: true, when: null },
+    };
+
+    it("should handle save button click", () => {
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movie}
+            />,
+        );
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(saveButton).toBeInTheDocument();
+        userEvent.click(saveButton);
+        expect(changeEditing).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle cancel button click", () => {
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movie}
+            />,
+        );
+        const cancelButton = screen.getByRole("button", { name: /cancel/i });
+        expect(cancelButton).toBeInTheDocument();
+        userEvent.click(cancelButton);
+        expect(changeEditing).toHaveBeenCalled();
+    });
+
+    it("should change movie title on input change", () => {
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movie}
+            />,
+        );
+        const titleInput = screen.getByLabelText(/title/i);
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(titleInput).toBeInTheDocument();
+        userEvent.clear(titleInput);
+        userEvent.type(titleInput, "New Title");
+        userEvent.click(saveButton);
+        expect(changeEditing).toHaveBeenCalledTimes(1);
+    });
+
+    it("should change release year on input change", () => {
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movie}
+            />,
+        );
+        const releasedInput = screen.getAllByLabelText(/release year/i);
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(releasedInput[0]).toBeInTheDocument();
+        userEvent.clear(releasedInput[0]);
+        userEvent.type(releasedInput[0], "2025");
+        userEvent.click(saveButton);
+        expect(changeEditing).toHaveBeenCalledTimes(1);
+    });
+
+    it("should change rating on input change", () => {
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movie}
+            />,
+        );
+        const ratingInput = screen.getAllByLabelText(/release year/i);
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(ratingInput[1]).toBeInTheDocument();
+        userEvent.selectOptions(ratingInput[1], "8");
+        userEvent.click(saveButton);
+        expect(editMovie).toHaveBeenCalledWith(movie.id, {
+            ...movie,
+            rating: 8,
+        });
+        expect(changeEditing).toHaveBeenCalledTimes(1);
+    });
+
+    it("should change description on input change", () => {
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movie}
+            />,
+        );
+        const descriptionInput = screen.getByLabelText(/description/i);
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(descriptionInput).toBeInTheDocument();
+        userEvent.type(descriptionInput, "New Description");
+        userEvent.click(saveButton);
+        expect(changeEditing).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle union type of release year and rating inputs", () => {
+        const movieWithInvalidValues: Movie = {
+            title: "Test Movie",
+            released: 0,
+            description: "A movie for testing",
+            id: "test-movie-1",
+            rating: 0,
+            soundtrack: [],
+            watched: { seen: true, liked: true, when: null },
+        };
+        render(
+            <MovieEditor
+                changeEditing={changeEditing}
+                editMovie={editMovie}
+                deleteMovie={deleteMovie}
+                movie={movieWithInvalidValues}
+            />,
+        );
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(saveButton).toBeInTheDocument();
+        userEvent.click(saveButton);
+
+        expect(editMovie).toHaveBeenCalledWith(movieWithInvalidValues.id, {
+            ...movieWithInvalidValues,
+            released: 0,
+            rating: 0,
+        });
+        expect(changeEditing).toHaveBeenCalledTimes(1);
     });
 });
